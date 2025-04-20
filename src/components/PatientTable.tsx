@@ -210,6 +210,7 @@ const PatientTable = forwardRef(
           }
           pagination={{ onChange: cancel }}
           scroll={{ x: "max-content" }}
+          className="rounded-2xl shadow-sm"
         />
       </Form>
     );

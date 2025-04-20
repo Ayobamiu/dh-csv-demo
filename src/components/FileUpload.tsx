@@ -6,6 +6,7 @@ import { Button, Upload } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
 import { PatientData, PatientRecord } from "../app/utils/types";
+import { parseCSV } from "@/app/utils/parser";
 const expectedHeaders = [
   "EHR ID",
   "Patient Name",
@@ -55,41 +56,6 @@ const FileUpload = ({ onFileProcessed, title }: FileUploadInterface) => {
     }
   };
 
-  const toCamelCase = (str: string) => {
-    return str
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9 ]/g, "") // remove special characters
-      .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) =>
-        index === 0 ? word.toLowerCase() : word.toUpperCase()
-      )
-      .replace(/\s+/g, "");
-  };
-
-  const parseCSV = (csvText: string) => {
-    const lines = csvText.split("\n").filter((line) => line.trim() !== "");
-
-    const rawHeaders = lines[0].split(",").map((header) => header.trim());
-    const camelCaseHeaders = rawHeaders.map(toCamelCase);
-
-    const headerMap = camelCaseHeaders.reduce((acc, original, index) => {
-      acc[original] = rawHeaders[index];
-      return acc;
-    }, {} as Record<string, string>); // e.g {"camelCaseHeaders":"Camel Case Headers"}
-
-    const data = lines.slice(1).map((line) => {
-      const values = line.split(",").map((value) => value.trim());
-      const rowData: Record<string, string> = {};
-
-      camelCaseHeaders.forEach((camelHeader, index) => {
-        rowData[camelHeader] = values[index] || "";
-      });
-
-      return rowData;
-    });
-
-    return { data, headerMap };
-  };
-
   const beforeUpload = (file: File) => {
     const reader = new FileReader();
     const isCSV = file.type === "text/csv";
@@ -118,8 +84,14 @@ const FileUpload = ({ onFileProcessed, title }: FileUploadInterface) => {
       showUploadList={false}
       disabled={isProcessing}
       accept=".csv"
+      data-test-id="file-upload"
     >
-      <Button disabled={isProcessing} size="large" icon={<UploadOutlined />}>
+      <Button
+        title="Upload CSV"
+        disabled={isProcessing}
+        size="large"
+        icon={<UploadOutlined />}
+      >
         {isProcessing ? "Processing..." : title}
       </Button>
     </Upload>

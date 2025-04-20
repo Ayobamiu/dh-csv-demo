@@ -1,16 +1,21 @@
 "use client";
 
-import FileUpload from "@/components/FileUpload";
 import { useEffect, useState } from "react";
-import { Toaster } from "react-hot-toast";
-import { PatientData } from "./utils/types";
+import toast from "react-hot-toast";
 import { FolderOpen } from "lucide-react";
-import { SyncOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import PatientTable from "@/components/PatientTable";
+import { SyncOutlined } from "@ant-design/icons";
 
-export default function Home() {
+import PatientTable from "@/components/PatientTable";
+import FileUpload from "@/components/FileUpload";
+
+import { PatientData } from "./utils/types";
+import { api } from "./utils/api";
+
+const Home = () => {
   const [patientData, setPatientData] = useState<PatientData | null>(null);
+
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("patientData");
@@ -32,18 +37,35 @@ export default function Home() {
   };
 
   const clearData = () => {
-    localStorage.removeItem("patientData");
-    setPatientData(null);
+    if (confirm("Are you sure you want to reset the data?")) {
+      localStorage.removeItem("patientData");
+      setPatientData(null);
+    }
   };
 
-  const uplaodTitle = patientData !== null ? "Change CSV" : "Uplaod CSV";
+  const handleSync = async () => {
+    if (!patientData) return;
+
+    setSyncing(true);
+    toast.loading("Syncing to CRM...", { id: "crmSync" });
+
+    try {
+      await api.syncToCRM(patientData);
+      toast.success("Synced to CRM successfully!", { id: "crmSync" });
+    } catch (error) {
+      toast.error("Sync failed. Please try again.", { id: "crmSync" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const uploadTitle = patientData !== null ? "Change CSV" : "Upload CSV";
 
   return (
     <div className="min-h-screen ">
-      <Toaster />
       <div className="container mx-auto p-4 pt-8">
-        <div className="flex justify-between items-center">
-          <header className="mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
+          <header className="">
             <h1 className="text-3xl font-bold text-black mb-2">
               Patient Data Management
             </h1>
@@ -51,10 +73,10 @@ export default function Home() {
               Upload, edit and manage patient records
             </p>
           </header>
-          <div className="flex gap-4">
+          <div className="flex gap-4 ">
             <FileUpload
               onFileProcessed={handleFileProcessed}
-              title={uplaodTitle}
+              title={uploadTitle}
             />
 
             <Button
@@ -65,14 +87,17 @@ export default function Home() {
             >
               Reset Data
             </Button>
+
             <Button
-              // disabled={patientData === undefined}
-              disabled
+              disabled={
+                !patientData || patientData.data.length === 0 || syncing
+              }
               size="large"
-              icon={<SyncOutlined />}
+              icon={<SyncOutlined spin={syncing} />}
               type="primary"
+              onClick={handleSync}
             >
-              Sync to CRM
+              {syncing ? "Syncing..." : "Sync to CRM"}
             </Button>
           </div>
         </div>
@@ -101,4 +126,5 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};
+export default Home;

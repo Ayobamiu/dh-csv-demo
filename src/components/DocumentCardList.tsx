@@ -1,19 +1,11 @@
 import React from "react";
 import { FileText, FolderOpen } from "lucide-react";
 import { PatientData } from "../app/utils/types";
+import { formatDate } from "@/app/utils/formatter";
 
 interface DocumentCardListProps {
   documents: PatientData[];
 }
-
-const formatDate = (timestamp: number) => {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const DocumentCardList: React.FC<DocumentCardListProps> = ({ documents }) => {
   if (documents.length === 0) {
